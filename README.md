@@ -37,12 +37,8 @@
 ## Диаграмма классов
 ![classdg](https://github.com/urlagushka/aps/blob/main/classdg.png)
 
+## BPMN
+![bpmn](https://github.com/urlagushka/aps/blob/main/bpmn.png)
+
 ## Sequence
 ![sequence](out/sequence.png)
-
-## Sequence v2
-![sequencev2](out/sequence_v2.png)
-
-## BMPN
-Тут для простоты опустил Event Manager т.к. он занимается только пересылкой событий
-![BMPN](out/bpmn.png)
