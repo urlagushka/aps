@@ -6,10 +6,10 @@
 
 struct request_t
 {
-  const client & client;
+  const client_t & client;
   const file_fd file;
 };
 
-const request_t make_request(const client & cl, const std::string & fl);
+const request_t make_request(const client_t & cl, const std::string & fl);
 
 #endif

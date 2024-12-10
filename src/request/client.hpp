@@ -9,7 +9,7 @@ enum class user_level_t
   COMMON
 };
 
-class client
+class client_t
 {
   public:
     client() = delete;
