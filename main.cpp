@@ -1,13 +1,18 @@
-#include "src/pqueue.hpp"
-#include "src/request/request.hpp"
+#include "src/http/server.hpp"
 
-bool pred(request_t)
-{
-    return true;
-}
+#include <stdexcept>
+#include <iostream>
 
 int main()
 {
-    request_t dnull;
-    pqueue_t< request_t, pred > queue(2, dnull);
+  try
+  {
+    http::server_h server(8080);
+    server.start();
+    while (true);
+  }
+  catch (const std::runtime_error & error)
+  {
+    std::cerr << error.what() << std::endl;
+  }
 }
