@@ -1,13 +1,28 @@
 #include "structs.hpp"
 
 #include <cstring>
-#include <iostream>
 #include <format>
+#include <iostream>
+
+std::string
+http::response_t::dump() const
+{
+  std::string response = std::format("{} {} {}\r\n", httpv, status_code, reason_phrase);
+
+  if (body)
+  {
+    std::string tmp = body.value().dump();
+    response += std::format("Content-Type: {}\r\n", ctype.value());
+    response += std::format("Content-Length: {}\r\n", tmp.size());\
+    response += "\r\n";
+    response += tmp;
+  }
+  return response;
+}
 
 http::request_t &
 http::request_t::operator=(const std::string & rhs)
 {
-  std::cout << rhs << std::endl;
   std::istringstream stream(rhs);
   std::string line;
 
@@ -46,7 +61,6 @@ http::request_t::operator=(const std::string & rhs)
   if (ctype.has_value() && ctype.value() == "application/json")
   {
     std::string body_content = rhs.substr(rhs.size() - csize.value(), rhs.size());
-    std::cout << body_content << std::endl;
     if (!body_content.empty())
     {
       try

@@ -3,40 +3,43 @@
 
 #include <cstddef>
 
-#include "pqueue.hpp"
+#include "src/pqueue.hpp"
 
-template< typename type, typename pred >
+template< typename dtype, typename pred >
 class PQueueManager
 {
-    public:
-        PQueueManager() = delete;
-        PQueueManager(std::size_t limit);
-        constexpr void add(const type & rhs);
-        type get();
-    private:
-        pqueue_t< type, pred > pqueue_;
+  public:
+    PQueueManager() = delete;
+    PQueueManager(std::size_t limit, const dtype & dnull);
+    dtype add(const dtype & rhs);
+    dtype get();
+  private:
+    pqueue_t< dtype, pred > pqueue_;
 };
 
-template< typename type, typename pred >
-PQueueManager::PQueueManager(std::size_t limit):
-    pqueue_(limit)
+template< typename dtype, typename pred >
+PQueueManager< dtype, pred >::PQueueManager(std::size_t limit, const dtype & dnull):
+  pqueue_(limit, dnull)
 {}
 
-template< typename type, typename pred >
-void PQueueManager::add(const type & rhs)
+template< typename dtype, typename pred >
+dtype
+PQueueManager< dtype, pred >::add(const dtype & rhs)
 {
-    if (!pqueue_.is_available())
-    {
-        throw std::runtime_error("queue is full!")
-    }
-    try
-    {
-        pqueue_.push(rhs);
-    }
-    return 
+  if (!pqueue_.is_available())
+  {
+    throw std::runtime_error("queue is full!");
+  }
+  return pqueue_.push(rhs);
 }
 
-template< typename type, typename pred >
-PQueueManager::type get()
+template< typename dtype, typename pred >
+dtype
+PQueueManager< dtype, pred >::get()
+{
+  auto tmp = pqueue_.get();
+  pqueue_.drop();
+  return tmp;
+}
 
 #endif

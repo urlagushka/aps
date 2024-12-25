@@ -3,3 +3,5 @@ cmake_install.cmake
 CMakeCache.txt
 Makefile
 server_test
+pq_service/CMakeFiles/*
+pq_service/pg_service

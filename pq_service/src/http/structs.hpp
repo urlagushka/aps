@@ -12,11 +12,12 @@ namespace http
     std::string httpv;
     std::size_t status_code;
     std::string reason_phrase;
-    std::string ctype;
-    std::size_t csize;
-    std::string date;
 
+    std::optional< std::string > ctype;
+    std::optional< std::size_t > csize;
     std::optional< nlohmann::json > body;
+
+    std::string dump() const;
   };
 
   struct request_t
