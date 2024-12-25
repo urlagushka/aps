@@ -8,6 +8,13 @@ int main()
   try
   {
     http::server_h server(8080);
+
+    server.post("/test", [](const nlohmann::json & rhs) -> nlohmann::json
+    {
+      std::cout << rhs.dump(2) << std::endl;
+      return nlohmann::json::parse("{}");
+    });
+
     server.start();
     while (true);
   }

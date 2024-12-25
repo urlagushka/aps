@@ -22,6 +22,7 @@ namespace http
   struct request_t
   {
     // all
+    std::string req;
     std::string endpoint;
     std::string httpv;
     std::string host;
@@ -31,6 +32,8 @@ namespace http
     std::optional< std::string > ctype;
     std::optional< std::size_t > csize;
     std::optional< nlohmann::json > body;
+
+    request_t & operator=(const std::string & rhs);
   };
 }
 

@@ -3,8 +3,11 @@
 #include <stdexcept>
 #include <format>
 #include <iostream>
-
+#include <string_view>
 #include <netinet/in.h>
+#include <functional>
+
+#include "structs.hpp"
 
 http::server_h::server_h(std::size_t port):
   __server(),
@@ -88,42 +91,40 @@ http::server_h::stop()
 void
 http::server_h::process(int client)
 {
-  char buffer[1024] = {0};
+  char buffer[4096] = {0};
   ssize_t bytes_read = read(client, buffer, sizeof(buffer) - 1);
   if (bytes_read <= 0) {
       close(client);
       return;
   }
 
-  std::string request(buffer);
-  std::cout << request << std::endl;
-  /*
-  std::string response;
-
-  // Пример обработки запроса
-  if (request.starts_with("POST")) {
-      std::lock_guard<std::mutex> lock(__post_mutex);
-      auto it = __post.find("/"); // Ваш путь, например, "/"
-      if (it != __post.end()) {
-          it->second(client_socket);
-      } else {
-          response = "HTTP/1.1 404 Not Found\r\n\r\n";
-      }
-  } else if (request.starts_with("GET")) {
-      std::lock_guard<std::mutex> lock(__get_mutex);
-      auto it = __get.find("/"); // Ваш путь, например, "/"
-      if (it != __get.end()) {
-          it->second(client_socket);
-      } else {
-          response = "HTTP/1.1 404 Not Found\r\n\r\n";
-      }
-  } else {
-      response = "HTTP/1.1 400 Bad Request\r\n\r\n";
+  try
+  {
+    request_t request;
+    request = buffer;
+    if (request.req == "POST")
+    {
+      std::lock_guard< std::mutex > lock(__post_mutex);
+      json response = __post.at(request.endpoint)(request.body);
+      const char * tmp = response.dump().c_str();
+      send(client, tmp, sizeof(tmp), 0);
+    }
+    else
+    {
+      const char * response = "HTTP/1.1 400 Bad Request\r\n\r\n";
+      send(client, response, sizeof(response), 0);
+    }
+  }
+  catch (const std::runtime_error & error)
+  {
+    send(client, error.what(), sizeof(error.what()), 0);
+  }
+  catch (const std::out_of_range &)
+  {
+    std::cout << "OUT OF RANGE" << std::endl;
+    const char * response = "HTTP/1.1 404 Not Found\r\n\r\n";
+    send(client, response, sizeof(response), 0);
   }
 
-  if (!response.empty()) {
-      send(client_socket, response.c_str(), response.size(), 0);
-  }
-
-  close(client_socket);*/
+  close(client);
 }

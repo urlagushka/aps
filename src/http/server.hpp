@@ -8,13 +8,16 @@
 #include <mutex>
 #include <unordered_map>
 
+#include "json.hpp"
 #include "structs.hpp"
 
 namespace http
 {
   class server_h
   {
-    using addf_t = void (*)(const request_t &, response_t &);
+    using json = nlohmann::json;
+    using addf_t = json (*)(const json &);
+
     public:
       server_h(std::size_t port);
       ~server_h();
