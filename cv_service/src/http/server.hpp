@@ -7,6 +7,7 @@
 #include <atomic>
 #include <mutex>
 #include <unordered_map>
+#include <functional>
 
 #include "json.hpp"
 #include "structs.hpp"
@@ -16,7 +17,7 @@ namespace http
   class server_h
   {
     using json = nlohmann::json;
-    using addf_t = json (*)(const json &);
+    using addf_t = std::function< json(const json &) >;
 
     public:
       server_h(std::size_t port);

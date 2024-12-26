@@ -29,7 +29,7 @@ namespace
 template < typename answer_t >
 concept correct_answer_t = requires(answer_t answer, const std::string & rhs)
 {
-  { answer.operator>>(rhs) } -> std::same_as< answer_t & >;
+  { answer = rhs } -> std::same_as< answer_t & >;
 };
 
 namespace curl
@@ -184,8 +184,8 @@ template < correct_answer_t answer_t >
 answer_t
 curl::curl_handler::string_to_answer(const std::string & rhs)
 {
-  answer_t answer;
-  return answer >> rhs;
+  answer_t answer = rhs;
+  return answer;
 }
 
 #endif

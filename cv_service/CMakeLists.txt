@@ -12,8 +12,7 @@ add_executable(${PROJECT_NAME}
     src/http/server.cpp
 
     src/request/curl_handler.cpp
-
-    src/data/client.cpp
-    src/data/file.cpp
-    src/data/request.cpp
 )
+
+find_package(CURL REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE CURL::libcurl)

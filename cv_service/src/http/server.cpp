@@ -98,33 +98,52 @@ http::server_h::process(int client)
       return;
   }
 
+  response_t response;
+  request_t request;
   try
   {
-    request_t request;
     request = buffer;
     if (request.req == "POST")
     {
       std::lock_guard< std::mutex > lock(__post_mutex);
-      json response = __post.at(request.endpoint)(request.body);
-      const char * tmp = response.dump().c_str();
-      send(client, tmp, sizeof(tmp), 0);
+      json data = __post.at(request.endpoint)(request.body);
+      std::string dump = data.dump();
+      response = {
+        .httpv = request.httpv,
+        .status_code = 200,
+        .reason_phrase = "Ok",
+        .ctype = request.ctype,
+        .csize = dump.size(),
+        .body = dump
+      };
     }
     else
     {
-      const char * response = "HTTP/1.1 400 Bad Request\r\n\r\n";
-      send(client, response, sizeof(response), 0);
+      response = {
+        .httpv = request.httpv,
+        .status_code = 400,
+        .reason_phrase = "Bad Request"
+      };
     }
   }
   catch (const std::runtime_error & error)
   {
-    send(client, error.what(), sizeof(error.what()), 0);
+    response = {
+      .httpv = request.httpv,
+      .status_code = 503,
+      .reason_phrase = error.what()
+    };
   }
   catch (const std::out_of_range &)
   {
-    std::cout << "OUT OF RANGE" << std::endl;
-    const char * response = "HTTP/1.1 404 Not Found\r\n\r\n";
-    send(client, response, sizeof(response), 0);
+    response = {
+      .httpv = request.httpv,
+      .status_code = 404,
+      .reason_phrase = "Not Found"
+    };
   }
 
+  std::string tmp = response.dump();
+  send(client, tmp.c_str(), tmp.size(), 0);
   close(client);
 }
