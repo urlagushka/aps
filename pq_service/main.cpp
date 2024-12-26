@@ -2,6 +2,7 @@
 #include <iostream>
 #include <functional>
 
+#include "src/request/curl_handler.hpp"
 #include "src/http/server.hpp"
 #include "pqueue_manager.hpp"
 
@@ -15,6 +16,7 @@ struct pred_t
 
 int main()
 {
+  // SERVER INIT
   nlohmann::json dnull;
   PQueueManager< nlohmann::json, pred_t > pqm(10, dnull);
 
@@ -46,14 +48,51 @@ int main()
       }
     });
 
-    server.post("/status", [](const nlohmann::json & rhs) -> nlohmann::json
+    server.post("/status",
+    [dnull, &pqm](const nlohmann::json &) -> nlohmann::json
     {
-      std::cout << rhs.dump(2) << std::endl;
-      return nlohmann::json::parse("{}");
+      nlohmann::json response;
+      response["items"] = nlohmann::json::array();
+      const auto & tmp = pqm.dump();
+      for (const auto & data : tmp)
+      {
+        std::cout << data << std::endl;
+        response["items"].push_back(data);
+      }
+      return response;
+    });
+
+    server.post("/check",
+    [dnull, &pqm](const nlohmann::json & rhs) -> nlohmann::json
+    {
+      nlohmann::json response;
+      response["is_contains"] = (pqm.is_contains(rhs)) ? 1 : 0;
+      return response;
     });
 
     server.start();
-    while (true);
+
+    // CURL INIT
+    curl::curl_handler qq("pq_service");
+
+    // MAIN
+    while (true)
+    {
+      try
+      {
+        nlohmann::json response;
+        auto item = pqm.get();
+        do
+        {
+          response = qq.post< nlohmann::json >("http://localhost:8081/add", item);
+        }
+        while (response["status"] != 0);
+      }
+      catch (const std::runtime_error & error)
+      {
+        std::cerr << error.what() << std::endl;
+      }
+    }
   }
   catch (const std::runtime_error & error)
   {

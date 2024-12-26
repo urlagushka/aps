@@ -2,6 +2,8 @@
 #define PQUEUE_MANAGER_HPP
 
 #include <cstddef>
+#include <vector>
+#include <algorithm>
 
 #include "src/pqueue.hpp"
 
@@ -13,6 +15,9 @@ class PQueueManager
     PQueueManager(std::size_t limit, const dtype & dnull);
     dtype add(const dtype & rhs);
     dtype get();
+    const std::vector< dtype > & dump() const;
+    const bool is_contains(const dtype & rhs);
+
   private:
     pqueue_t< dtype, pred > pqueue_;
 };
@@ -40,6 +45,21 @@ PQueueManager< dtype, pred >::get()
   auto tmp = pqueue_.get();
   pqueue_.drop();
   return tmp;
+}
+
+template< typename dtype, typename pred >
+const std::vector< dtype > &
+PQueueManager< dtype, pred >::dump() const
+{
+  return pqueue_.dump();
+}
+
+template< typename dtype, typename pred >
+const bool
+PQueueManager< dtype, pred >::is_contains(const dtype & rhs)
+{
+  const auto & tmp = dump();
+  return std::find(tmp.begin(), tmp.end(), rhs) != tmp.end();
 }
 
 #endif

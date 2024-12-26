@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <utility>
 #include <algorithm>
+#include <iostream>
 
 template< typename dtype, typename pred >
 class pqueue_t
@@ -20,6 +21,7 @@ class pqueue_t
     const dtype & push(const dtype & rhs);
     const dtype & get() const;
     void drop();
+    const vec_t & dump() const;
 
     const bool is_available() const;
     const std::size_t size() const;
@@ -36,7 +38,7 @@ class pqueue_t
 
 template< typename dtype, typename pred >
 pqueue_t< dtype, pred >::pqueue_t(std::size_t limit, const dtype & dnull):
-  queue_(limit),
+  queue_(0),
   dnull_(dnull),
   limit_(limit)
 {}
@@ -136,6 +138,13 @@ pqueue_t< dtype, pred >::shift()
   std::copy(++queue_.cbegin(), queue_.cend(), std::back_inserter(tmp));
   queue_ = tmp;
   return ret;
+}
+
+template< typename dtype, typename pred >
+const pqueue_t< dtype, pred >::vec_t &
+pqueue_t< dtype, pred >::dump() const
+{
+  return queue_;
 }
 
 #endif
