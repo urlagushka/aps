@@ -15,8 +15,10 @@ class PQueueManager
     PQueueManager(std::size_t limit, const dtype & dnull);
     dtype add(const dtype & rhs);
     dtype get();
+    void drop();
     const std::vector< dtype > & dump() const;
     const bool is_contains(const dtype & rhs);
+    const bool is_empty();
 
   private:
     pqueue_t< dtype, pred > pqueue_;
@@ -31,10 +33,6 @@ template< typename dtype, typename pred >
 dtype
 PQueueManager< dtype, pred >::add(const dtype & rhs)
 {
-  if (!pqueue_.is_available())
-  {
-    throw std::runtime_error("queue is full!");
-  }
   return pqueue_.push(rhs);
 }
 
@@ -42,9 +40,14 @@ template< typename dtype, typename pred >
 dtype
 PQueueManager< dtype, pred >::get()
 {
-  auto tmp = pqueue_.get();
+  return pqueue_.get();
+}
+
+template< typename dtype, typename pred >
+void
+PQueueManager< dtype, pred >::drop()
+{
   pqueue_.drop();
-  return tmp;
 }
 
 template< typename dtype, typename pred >
@@ -60,6 +63,13 @@ PQueueManager< dtype, pred >::is_contains(const dtype & rhs)
 {
   const auto & tmp = dump();
   return std::find(tmp.begin(), tmp.end(), rhs) != tmp.end();
+}
+
+template< typename dtype, typename pred >
+const bool
+PQueueManager< dtype, pred >::is_empty()
+{
+  return pqueue_.size() == 0;
 }
 
 #endif

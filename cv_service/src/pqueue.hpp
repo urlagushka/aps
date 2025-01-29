@@ -5,7 +5,6 @@
 #include <stdexcept>
 #include <utility>
 #include <algorithm>
-#include <iostream>
 
 template< typename dtype, typename pred >
 class pqueue_t
@@ -17,14 +16,15 @@ class pqueue_t
   public:
     pqueue_t() = delete;
     pqueue_t(std::size_t limit, const dtype & dnull);
+    ~pqueue_t();
 
     const dtype & push(const dtype & rhs);
     const dtype & get() const;
-    void drop();
+    const dtype & drop();
     const vec_t & dump() const;
 
-    const bool is_available() const;
-    const std::size_t size() const;
+    bool is_available() const;
+    std::size_t size() const;
 
   private:
     std::pair< iter_t, const dtype & > swap_by_pred(const dtype & rhs);
@@ -38,10 +38,16 @@ class pqueue_t
 
 template< typename dtype, typename pred >
 pqueue_t< dtype, pred >::pqueue_t(std::size_t limit, const dtype & dnull):
-  queue_(0),
+  queue_(),
   dnull_(dnull),
   limit_(limit)
 {}
+
+template< typename dtype, typename pred >
+pqueue_t< dtype, pred >::~pqueue_t()
+{
+  queue_.clear();
+}
 
 template< typename dtype, typename pred >
 const dtype &
@@ -67,32 +73,32 @@ pqueue_t< dtype, pred >::get() const
 {
   if (size() == 0)
   {
-    throw std::runtime_error("queue is empty, cannot get!");
+    return dnull_;
   }
-  return queue_[0];
+  return queue_.front();
 }
 
 template< typename dtype, typename pred >
-void
+const dtype &
 pqueue_t< dtype, pred >::drop()
 {
   if (size() == 0)
   {
-    throw std::runtime_error("queue is empty, cannot drop!");
+    return dnull_;
   }
 
-  shift();
+  return shift();
 }
 
 template< typename dtype, typename pred >
-const bool
+bool
 pqueue_t< dtype, pred >::is_available() const
 {
   return size() < limit_;
 }
 
 template< typename dtype, typename pred >
-const std::size_t
+std::size_t
 pqueue_t< dtype, pred >::size() const
 {
   return queue_.size();
@@ -134,9 +140,7 @@ const dtype &
 pqueue_t< dtype, pred >::shift()
 {
   const dtype & ret = get();
-  vec_t tmp(limit_);
-  std::copy(++queue_.cbegin(), queue_.cend(), std::back_inserter(tmp));
-  queue_ = tmp;
+  queue_.erase(queue_.begin());
   return ret;
 }
 

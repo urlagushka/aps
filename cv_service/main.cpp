@@ -1,96 +1,188 @@
 #include <stdexcept>
 #include <iostream>
 #include <functional>
+#include <vector>
+#include <algorithm>
 
 #include "src/request/curl_handler.hpp"
 #include "src/http/server.hpp"
-#include "pqueue_manager.hpp"
+#include "converter.hpp"
 
-struct pred_t
+struct wait_t
 {
-  bool operator()(const nlohmann::json &)
+  double operator()(std::size_t size)
   {
-    return true;
+    return size * 2.17;
   }
 };
 
 int main()
 {
-  // SERVER INIT
-  nlohmann::json dnull;
-  PQueueManager< nlohmann::json, pred_t > pqm(10, dnull);
+  using cv_t = converter_t< nlohmann::json, wait_t >;
+  std::vector< cv_t > * cv_vec = nullptr;
+  std::mutex cv_mutex;
+  std::size_t dnull = 0;
+  std::atomic< bool > is_send = true;
+  nlohmann::json items = {
+    {"items", nlohmann::json::array()}
+  };
+  nlohmann::json items_cl = {
+    {"items", nlohmann::json::array()}
+  };
 
   try
   {
-    http::server_h server(8080);
+    http::server_h server(8086);
 
-    server.post("/add",
-    [dnull, &pqm](const nlohmann::json & rhs) -> nlohmann::json
+    server.post("/start",
+    [&cv_vec, &cv_mutex, &dnull, &is_send](const nlohmann::json & rhs) -> nlohmann::json
     {
+      std::lock_guard< std::mutex > lock(cv_mutex);
       nlohmann::json response;
-      try
+
+      if (cv_vec != nullptr)
       {
-        auto invalid = pqm.add(rhs);
-        if (invalid == dnull)
-        {
-          response["status"] = 1;
-          response["invalid"] = 0;
-          return response;
-        }
-        response["status"] = 0;
+        delete cv_vec;
+        cv_vec = nullptr;
+      }
+      int size = rhs["cvv_size"];
+      if (size < 0)
+      {
+        std::cout << std::format("WARNING | cvv size < 0, size is {}", size) << std::endl;
+        response["status"] = 1;
+        response["error"] = std::format("cvv size < 0, size is {}", size);
         return response;
       }
-      catch (const std::runtime_error & error)
-      {
-        response["status"] = 2;
-        response["error"] = error.what();
-        return response;
-      }
-    });
 
-    server.post("/status",
-    [dnull, &pqm](const nlohmann::json &) -> nlohmann::json
-    {
-      nlohmann::json response;
-      response["items"] = nlohmann::json::array();
-      const auto & tmp = pqm.dump();
-      for (const auto & data : tmp)
-      {
-        std::cout << data << std::endl;
-        response["items"].push_back(data);
-      }
+      cv_vec = new std::vector< cv_t >(size, cv_t(dnull));
+      is_send = true;
+      std::cout << std::format("INFO | cvv created with size {}", size) << std::endl;
+      response["status"] = 0;
       return response;
     });
 
-    server.post("/check",
-    [dnull, &pqm](const nlohmann::json & rhs) -> nlohmann::json
+    server.post("/stop",
+    [&cv_vec, &cv_mutex, &is_send](const nlohmann::json & rhs) -> nlohmann::json
     {
+      is_send = true;
+      std::lock_guard< std::mutex > lock(cv_mutex);
       nlohmann::json response;
-      response["is_contains"] = (pqm.is_contains(rhs)) ? 1 : 0;
+      delete cv_vec;
+      cv_vec = nullptr;
+      response["status"] = 0;
+      std::cout << "INFO | cvv deleted" << std::endl;
+      return response;
+    });
+
+    server.post("/add",
+    [&cv_vec, &cv_mutex, &is_send, &items](const nlohmann::json & rhs) -> nlohmann::json
+    {
+      std::lock_guard< std::mutex > lock(cv_mutex);
+      nlohmann::json response;
+
+      if (cv_vec == nullptr)
+      {
+        std::cout << "ERROR | cvv is null" << std::endl;
+        response["status"] = 1;
+        response["error"] = "cvv is null";
+        return response;
+      }
+
+      auto tmp = std::find_if(cv_vec->begin(), cv_vec->end(), [](const cv_t & rhs)
+      {
+        return rhs.is_available();
+      });
+      if (tmp == cv_vec->end())
+      {
+        std::cout << "WARNING | no available converters" << std::endl;
+        response["status"] = 1;
+        response["error"] = "no available converters";
+        is_send = false;
+        return response;
+      }
+
+      try
+      {
+        tmp->set_item(rhs);
+        tmp->process_item();
+        nlohmann::json cvn = {
+          {"id", std::distance(cv_vec->begin(), tmp) + 1},
+          {"filename", rhs["filename"]},
+          {"filesize", rhs["filesize"]},
+          {"source_fmt", rhs["source_fmt"]},
+          {"target_fmt", rhs["target_fmt"]},
+          {"status", "занят"}
+        };
+        items["items"].push_back(cvn);
+        response["status"] = 0;
+        std::cout << "INFO | cvv item added" << std::endl;
+      }
+      catch (const std::runtime_error & error)
+      {
+        std::cout << std::format("ERROR | cvv item process error: {}", error.what()) << std::endl;
+        response["status"] = 1;
+        response["error"] = error.what();
+      }
+
+      return response;
+    });
+
+    server.post("/update_cvs",
+    [&cv_vec, &cv_mutex, &items](const nlohmann::json &) -> nlohmann::json
+    {
+      std::lock_guard< std::mutex > lock(cv_mutex);
+      nlohmann::json response = items;
+      items["items"] = nlohmann::json::array();
+      response["status"] = 0;
+      return response;
+    });
+
+    server.post("/update_cls",
+    [&cv_vec, &cv_mutex, &items_cl](const nlohmann::json &) -> nlohmann::json
+    {
+      std::lock_guard< std::mutex > lock(cv_mutex);
+      nlohmann::json response = items_cl;
+      items_cl["items"] = nlohmann::json::array();
+      response["status"] = 0;
       return response;
     });
 
     server.start();
 
-    // CURL INIT
-    curl::curl_handler qq("pq_service");
+    curl::curl_handler qq("cv_service");
 
-    // MAIN
     while (true)
     {
-      try
+      std::lock_guard< std::mutex > lock(cv_mutex);
+      if (!is_send)
       {
-        nlohmann::json response;
-        auto item = pqm.get();
-        do
+        auto tmp = std::find_if(cv_vec->begin(), cv_vec->end(), [](const cv_t & rhs)
         {
-          response = qq.post< nlohmann::json >("http://localhost:8081/add", item);
+          return rhs.is_available();
+        });
+        if (tmp != cv_vec->end())
+        {
+          qq.post< nlohmann::json >("http://localhost:8085/continue", {});
+          is_send = true;
         }
-        while (response["status"] != 0);
       }
-      catch (const std::runtime_error & error)
+      if (cv_vec == nullptr)
       {
-        std::cerr << error.what() << std::endl;
+        continue;
+      }
+      for (std::size_t i = 0; i < cv_vec->size(); ++i)
+      {
+        if ((*cv_vec)[i].is_complete())
+        {
+          auto item = (*cv_vec)[i].get_item();
+
+          item["status"] = "готов";
+          items_cl["items"].push_back(item);
+
+          item["id"] = i + 1;
+          item["status"] = "свободен";
+          items["items"].push_back(item);
+        }
       }
     }
   }

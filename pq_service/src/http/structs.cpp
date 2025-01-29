@@ -9,6 +9,11 @@ http::response_t::dump() const
 {
   std::string response = std::format("{} {} {}\r\n", httpv, status_code, reason_phrase);
 
+  if (headers)
+  {
+    response += headers.value();
+  }
+
   if (body)
   {
     std::string tmp = body.value().dump();

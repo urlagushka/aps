@@ -1,0 +1,3 @@
+/home/urlagushka/aps/cv_service/CMakeFiles/cv_service.dir
+/home/urlagushka/aps/cv_service/CMakeFiles/edit_cache.dir
+/home/urlagushka/aps/cv_service/CMakeFiles/rebuild_cache.dir

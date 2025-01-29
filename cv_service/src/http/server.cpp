@@ -103,7 +103,23 @@ http::server_h::process(int client)
   try
   {
     request = buffer;
-    if (request.req == "POST")
+
+    // CORS HEADERS
+    std::string cors_headers = 
+      "Access-Control-Allow-Origin: *\r\n"
+      "Access-Control-Allow-Methods: POST, OPTIONS\r\n"
+      "Access-Control-Allow-Headers: Content-Type\r\n";
+
+    if (request.req == "OPTIONS")
+    {
+      response = {
+        .httpv = request.httpv,
+        .status_code = 204,
+        .reason_phrase = "No Content",
+        .headers = cors_headers
+      };
+    }
+    else if (request.req == "POST")
     {
       std::lock_guard< std::mutex > lock(__post_mutex);
       json data = __post.at(request.endpoint)(request.body);
@@ -112,6 +128,7 @@ http::server_h::process(int client)
         .httpv = request.httpv,
         .status_code = 200,
         .reason_phrase = "Ok",
+        .headers = cors_headers,
         .ctype = request.ctype,
         .csize = dump.size(),
         .body = dump
@@ -122,7 +139,8 @@ http::server_h::process(int client)
       response = {
         .httpv = request.httpv,
         .status_code = 400,
-        .reason_phrase = "Bad Request"
+        .reason_phrase = "Bad Request",
+        .headers = cors_headers
       };
     }
   }
@@ -130,7 +148,7 @@ http::server_h::process(int client)
   {
     response = {
       .httpv = request.httpv,
-      .status_code = 503,
+      .status_code = 500,
       .reason_phrase = error.what()
     };
   }
@@ -140,6 +158,14 @@ http::server_h::process(int client)
       .httpv = request.httpv,
       .status_code = 404,
       .reason_phrase = "Not Found"
+    };
+  }
+  catch (const std::bad_function_call & error)
+  {
+    response = {
+      .httpv = request.httpv,
+      .status_code = 500,
+      .reason_phrase = "bad function"
     };
   }
 

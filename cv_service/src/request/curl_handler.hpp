@@ -51,7 +51,7 @@ namespace curl
       answer_t post(const url_t & url, const nlohmann::json & query);
 
       template < correct_answer_t answer_t >
-      std::future< answer_t > async_post(const url_t & url, const query_t & query);
+      std::future< answer_t > async_post(const url_t & url, const nlohmann::json & query);
 
       template < correct_answer_t answer_t >
       answer_t get(const url_t & url);
@@ -80,7 +80,7 @@ curl::curl_handler::post(const url_t & url, const nlohmann::json & query)
   std::string response;
   std::string tmp = query.dump();
 
-  curl_easy_setopt(__curl, CURLOPT_VERBOSE, 1L);
+  //curl_easy_setopt(__curl, CURLOPT_VERBOSE, 1L);
   curl_easy_setopt(__curl, CURLOPT_URL, url.c_str());
   curl_easy_setopt(__curl, CURLOPT_POST, 1L);
   curl_easy_setopt(__curl, CURLOPT_POSTFIELDS, tmp.c_str());
@@ -107,7 +107,7 @@ curl::curl_handler::post(const url_t & url, const nlohmann::json & query)
 
 template < correct_answer_t answer_t >
 std::future< answer_t >
-curl::curl_handler::async_post(const url_t & url, const query_t & query)
+curl::curl_handler::async_post(const url_t & url, const nlohmann::json & query)
 {
   std::promise< answer_t > promise;
   std::future< answer_t > future = promise.get_future();
@@ -184,7 +184,7 @@ template < correct_answer_t answer_t >
 answer_t
 curl::curl_handler::string_to_answer(const std::string & rhs)
 {
-  answer_t answer = rhs;
+  answer_t answer = nlohmann::json::parse(rhs);
   return answer;
 }
 

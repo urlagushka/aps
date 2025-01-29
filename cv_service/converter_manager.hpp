@@ -1,6 +1,0 @@
-#ifndef CONVERTER_MANAGER_HPP
-#define CONVERTER_MANAGER_HPP
-
-
-
-#endif

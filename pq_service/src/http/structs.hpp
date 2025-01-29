@@ -12,6 +12,7 @@ namespace http
     std::string httpv;
     std::size_t status_code;
     std::string reason_phrase;
+    std::optional< std::string > headers;
 
     std::optional< std::string > ctype;
     std::optional< std::size_t > csize;
@@ -22,13 +23,11 @@ namespace http
 
   struct request_t
   {
-    // all
     std::string req;
     std::string endpoint;
     std::string httpv;
     std::string host;
 
-    // post
     std::optional< std::string > useragent;
     std::optional< std::string > ctype;
     std::optional< std::size_t > csize;

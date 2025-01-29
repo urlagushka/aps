@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/cv_service.dir/main.cpp.o CMakeFiles/cv_service.dir/src/http/structs.cpp.o CMakeFiles/cv_service.dir/src/http/server.cpp.o CMakeFiles/cv_service.dir/src/request/curl_handler.cpp.o -o cv_service  /usr/lib/x86_64-linux-gnu/libcurl.so 
